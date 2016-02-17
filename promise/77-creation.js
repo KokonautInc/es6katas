@@ -7,21 +7,21 @@ describe('a promise can be created in multiple ways', function() {
 
     it('using `Promise` as a function', function() {
       function callPromiseAsFunction() {
-        new Promise()
+        new Promise();
       }
       assert.throws(callPromiseAsFunction);
     });
 
     it('no parameter is passed', function() {
       function promiseWithoutParams() {
-        new Promise((res, rej) => {});
+        new Promise();
       }
-      assert.throws(promiseWithoutParams());
+      assert.throws(promiseWithoutParams);
     });
 
     it('passing a non-callable throws too', function() {
-      const notAFunction = (res, rej) => {};
-      assert.throws(() => { new Promise(notAFunction(res, rej)); });
+      const notAFunction = '';
+      assert.throws(() => { new Promise(notAFunction); });
     });
 
   });
@@ -34,7 +34,7 @@ describe('a promise can be created in multiple ways', function() {
     });
 
     it('by passing a resolve and a reject function to it', function(done) {
-      const promise = new Promise((res, rej) => rej());
+      const promise = new Promise((resolve, reject) => reject());
 
       promise
         .then(() => done(new Error('Expected promise to be rejected.')))
@@ -47,7 +47,7 @@ describe('a promise can be created in multiple ways', function() {
 
     it('using `class X extends Promise{}` is possible', function() {
       class MyPromise extends Promise {}
-      const promise = new MyPromise(res => res());
+      const promise = new MyPromise(resolve => resolve());
 
       promise
         .then(() => done())
@@ -55,14 +55,14 @@ describe('a promise can be created in multiple ways', function() {
     });
 
     it('must call `super()` in the constructor if it wants to inherit/specialize the behavior', function() {
-      class MyPromise extends Promise {
+      class ResolvingPromise extends Promise {
 
         constructor(res, rej) {
           super(res, rej);
         }
       }
 
-      return new MyPromise((res, rej) => res());
+      return new ResolvingPromise((res, rej) => res());
     });
 
   });
@@ -71,8 +71,8 @@ describe('a promise can be created in multiple ways', function() {
 
     it('returns all results', function(done) {
       const promise = Promise.all([
-        new Promise(res => res(1)),
-        new Promise(res => res(2))
+        new Promise(resolve => resolve(1)),
+        new Promise(resolve => resolve(2))
       ]);
 
       promise
@@ -82,11 +82,11 @@ describe('a promise can be created in multiple ways', function() {
 
     it('is rejected if one rejects', function(done) {
       const promise = Promise.all([
-        new Promise(rej => rej(1))
+        new Promise((resolve, reject) => reject(1))
       ]);
 
       promise
-        .then(() => { assert.deepEqual(value, [1, 2]); done(); })
+        .then(() => done(new NotRejectedError()))
         .catch(() => done());
     });
 
@@ -106,7 +106,7 @@ describe('a promise can be created in multiple ways', function() {
 
     it('if one of the given promises rejects first, the returned promise is rejected', function(done) {
       const earlyRejectedPromise = new Promise((resolve, reject) => reject('I am a rejector'));
-      const lateResolvingPromise = new Promise((resolve, reject) => setTimeout(resolve, 10));
+      const lateResolvingPromise = new Promise(resolve => setTimeout(resolve, 10));
       const promise = Promise.race([earlyRejectedPromise, lateResolvingPromise]);
 
       promise
